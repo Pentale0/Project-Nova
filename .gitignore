@@ -11,3 +11,5 @@ venv/
 
 # Vercel CLI local project link (created by ercel login / ercel deploy)
 .vercel
+.vercel
+.env*

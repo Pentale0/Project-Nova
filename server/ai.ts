@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Gemini prompt construction for PROJECT NOVA's three coaches.
  *
  * Every prompt demands raw JSON (no markdown fences, no prose) so the client
@@ -9,8 +9,8 @@
  * in the React app award XP.
  */
 
-import { StatInfo } from '../src/types';
-import { MediaCategory } from '../src/types';
+import type { StatInfo } from '../src/types.js';
+import type { MediaCategory } from '../src/types.js';
 
 export interface MediaTitle {
   title: string;
@@ -125,7 +125,7 @@ export function buildVitalityPrompt(input: {
 
   return `You are NOVA's Vitality Coach: practical, encouraging, and safety-first.
 
-FOCUS AREA: ${input.domain} — ${brief}
+FOCUS AREA: ${input.domain} â€” ${brief}
 THE USER'S QUESTION OR GOAL: ${input.query}
 
 CONTEXT: The user is at Vitality rank ${input.stat.rank} (${input.stat.title}),
@@ -216,8 +216,8 @@ function describeFact(fact: MediaFact, category: MediaCategory): string {
   const tail = blurb ? ` ${blurb}` : '';
 
   return detail || tail
-    ? `${fact.title} — ${detail}${tail}`
-    : `${fact.title} — (no reference data available)`;
+    ? `${fact.title} â€” ${detail}${tail}`
+    : `${fact.title} â€” (no reference data available)`;
 }
 
 export function buildCulturePrompt(input: {
@@ -249,7 +249,7 @@ export function buildCulturePrompt(input: {
     ? `
 VERIFIED REFERENCE DATA (fetched from a ${CATEGORY_LABEL[
         input.category
-      ].toLowerCase()} database — treat every field as fact, and use it to make
+      ].toLowerCase()} database â€” treat every field as fact, and use it to make
 reasons concrete and specific):
 ${input.facts!.map((f) => `- ${describeFact(f, input.category)}`).join('\n')}
 `
@@ -260,7 +260,7 @@ justifies every pick.
 
 The user is building a Top 10 ${targetLabel} list. Their current Culture rank is
 ${input.stat.rank} (${input.stat.title}). A low rank does NOT mean they have logged
-nothing — always work from the list below, never assume it is empty.
+nothing â€” always work from the list below, never assume it is empty.
 
 THEIR LOGGED TITLES (the basis for every recommendation):
 ${loggedStr}
@@ -284,9 +284,11 @@ Requirements:
 - Every reason must name a specific trait (theme, tone, genre, creator, or structure)
   shared with a title from their logged list, naming that title. A reason that says
   they have "no logged preferences", or that a pick is good "for everyone", is a
-  failure — pick something that connects to what they actually logged.
+  failure â€” pick something that connects to what they actually logged.
 - When the reference data above covers the connection, cite the concrete detail
   it provides (a shared genre, creator, era, or rating) rather than gesturing at
   it vaguely.
 - Match the user's apparent taste level; do not recommend obscure entries.`;
 }
+
+

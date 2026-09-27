@@ -5,7 +5,9 @@
  * server/handlers.ts, shared with the local Express dev server.
  */
 
-import { createHandler } from './_adapter';
-import { health } from '../server/handlers';
+import { createHandler } from '../server/adapter.js';
+import { health } from '../server/handlers.js';
 
 export default createHandler(health);
+
+

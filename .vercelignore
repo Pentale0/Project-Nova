@@ -11,10 +11,17 @@ dist
 .env.local
 .vercel
 
-# Unrelated Python/FastAPI service. Not imported by the Vite app or api/ functions.
-project-nova
-
 # Local tooling output
 *.log
 npm-debug.log*
 .DS_Store
+
+# NOTE: project-nova/ (the Python/FastAPI service) is deliberately NOT excluded.
+#
+# .vercelignore is repo-wide: it applies to every Vercel project built from this
+# repository, not just this one. The `project-nova` Vercel project has its Root
+# Directory set to `project-nova`, so excluding that folder here left it with no
+# source to build and every deploy failed with "No FastAPI entrypoint found".
+#
+# Leaving it in costs a few KB per upload. Excluding it would break that
+# project permanently, so it stays.

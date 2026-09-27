@@ -19,6 +19,8 @@ import vitality from '../api/ai/vitality';
 import culture from '../api/ai/culture';
 import search from '../api/search';
 import health from '../api/health';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 let pass = 0;
 let fail = 0;
@@ -72,6 +74,27 @@ function assertVercelShaped(fn: unknown, label: string) {
   }
 }
 
+/**
+ * A request whose `body` behaves like Vercel's.
+ *
+ * On Vercel, `body` is a getter that parses the request on access and throws
+ * when the payload is unusable. Express caches a plain value instead, so a mock
+ * with an ordinary property cannot reproduce the deployed behaviour -- the
+ * throwing getter has to be simulated deliberately.
+ */
+function vercelStyleReq(body: Record<string, unknown>) {
+  let reads = 0;
+  return {
+    method: 'POST',
+    url: '/api/ai/vitality',
+    get body() {
+      // One-shot: a second read has nothing left to parse.
+      if (reads++ > 0) throw new Error('Invalid JSON');
+      return body;
+    },
+  };
+}
+
 console.log('\nvercel function adapters');
 
 await check('every api/* entry point default-exports a function', () => {
@@ -80,6 +103,87 @@ await check('every api/* entry point default-exports a function', () => {
   assertVercelShaped(culture, 'api/ai/culture');
   assertVercelShaped(search, 'api/search');
   assertVercelShaped(health, 'api/health');
+});
+
+await check('api/ contains no underscore-prefixed files or folders', () => {
+  // Vercel treats every path in api/ as a function endpoint and drops anything
+  // whose name starts with an underscore. A shared helper placed there -- an
+  // earlier version of this repo had api/_adapter.ts -- is excluded from the
+  // upload without warning: the build goes green, and every function then fails
+  // at runtime with ERR_MODULE_NOT_FOUND. Nothing local catches that, so it is
+  // checked here.
+  const offenders: string[] = [];
+
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('_')) {
+        offenders.push(join(dir, entry.name).replace(/\\/g, '/'));
+        continue;
+      }
+      if (entry.isDirectory()) walk(join(dir, entry.name));
+    }
+  };
+
+  walk(join(process.cwd(), 'api'));
+  if (offenders.length > 0) {
+    throw new Error(
+      `Vercel will not upload: ${offenders.join(', ')}. Move shared helpers into server/.`
+    );
+  }
+});
+
+await check('no api/ entry point imports a path Vercel would rewrite', () => {
+  // Belt and braces for the same rule: catches an underscore-prefixed helper
+  // referenced by a relative import even if it lives outside api/.
+  const sources = [
+    'api/health.ts',
+    'api/search.ts',
+    'api/ai/academics.ts',
+    'api/ai/vitality.ts',
+    'api/ai/culture.ts',
+  ];
+  const bad: string[] = [];
+  for (const file of sources) {
+    const text = readFileSync(join(process.cwd(), file), 'utf8');
+    for (const match of text.matchAll(/from\s+'([^']+)'/g)) {
+      if (/(^|\/)_/.test(match[1])) bad.push(`${file} -> ${match[1]}`);
+    }
+  }
+  if (bad.length > 0) throw new Error(bad.join('; '));
+});
+
+await check('every relative import in the deployed graph carries an extension', () => {
+  // Vercel transpiles each api/*.ts to .js and copies server/ into the lambda
+  // via `includeFiles`, but it does not bundle and does not rewrite specifiers.
+  // Node's ESM resolver will not add a missing extension, so an import of
+  // './http' survives the build intact and then throws ERR_MODULE_NOT_FOUND at
+  // invoke time. tsx and tsc both paper over this locally, which is why the
+  // dev server and the whole test suite pass while every deployed function
+  // 500s with FUNCTION_INVOCATION_FAILED.
+  const roots = ['api', 'server'];
+  const bad: string[] = [];
+
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.name.endsWith('.ts')) {
+        const text = readFileSync(full, 'utf8');
+        for (const match of text.matchAll(/from\s+'(\.[^']*)'/g)) {
+          const spec = match[1];
+          if (!/\.[cm]?[jt]sx?$/.test(spec)) {
+            bad.push(`${full.replace(/\\/g, '/')} -> ${spec}`);
+          }
+        }
+      }
+    }
+  };
+
+  for (const root of roots) walk(join(process.cwd(), root));
+  if (bad.length > 0) {
+    throw new Error(`Node ESM cannot resolve these; append .js:\n  ${bad.join('\n  ')}`);
+  }
 });
 
 await check('health responds 200 with provider details', async () => {
@@ -176,6 +280,44 @@ await check('an unparseable body does not crash the adapter', async () => {
   if (res.statusCode !== 400) throw new Error(`expected 400, got ${res.statusCode}`);
 });
 
+await check("reads Vercel's body getter once and does not depend on it twice", async () => {
+  // A blank query keeps this off the network: the handler's own validation has
+  // to answer it. Getting 400 proves the body survived; getting 500 means the
+  // getter was read more than once and the second read threw.
+  const res = mockRes();
+  await vitality(vercelStyleReq({ query: '  ' }) as never, res as never);
+  if (res.statusCode !== 400) {
+    throw new Error(`expected 400 (a second read => 500), got ${res.statusCode}`);
+  }
+  if ((res.payload as { error?: string })?.error !== 'query is required') {
+    throw new Error(`handler did not run: ${JSON.stringify(res.payload)}`);
+  }
+});
+
+await check('an unparseable body is a 400, not an opaque 500', async () => {
+  // This is the exact shape of a real failure: Vercel's getter rejects a body
+  // it cannot parse (a UTF-8 BOM ahead of the JSON is enough) and throws
+  // "Invalid JSON". Before readBody() the exception escaped as a 500 whose only
+  // clue was the word "Invalid" -- true of the request, useless to whoever sent
+  // it. The handler's own 400 names the actual problem.
+  const res = mockRes();
+  const unparseable = {
+    method: 'POST',
+    url: '/api/ai/vitality',
+    get body(): never {
+      throw new Error('Invalid JSON');
+    },
+  };
+  await vitality(unparseable as never, res as never);
+  if (res.statusCode !== 400) {
+    throw new Error(`expected 400 for an unusable body, got ${res.statusCode}`);
+  }
+  if ((res.payload as { detail?: string })?.detail === 'Invalid JSON') {
+    throw new Error("leaked the provider's parse message to the client");
+  }
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
+
 

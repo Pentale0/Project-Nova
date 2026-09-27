@@ -1,5 +1,5 @@
-/**
- * PROJECT NOVA API — local development server.
+﻿/**
+ * PROJECT NOVA API â€” local development server.
  *
  * The browser never sees a model API key. Vite dev-proxies /api to this server
  * (see vite.config.ts), so the React app can call same-origin paths.
@@ -17,9 +17,9 @@
 
 import 'dotenv/config';
 import express from 'express';
-import * as handlers from './handlers';
-import { toHttpError, type RequestContext, type Handler } from './http';
-import { getProvider } from './provider';
+import * as handlers from './handlers.js';
+import { toHttpError, type RequestContext, type Handler } from './http.js';
+import { getProvider } from './provider.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -66,3 +66,4 @@ app.listen(PORT, () => {
     );
   }
 });
+

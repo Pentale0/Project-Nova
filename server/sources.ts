@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Free, keyless metadata sources for the Culture section.
  *
  * Every source here was chosen because it needs no API key and no signup, and
@@ -29,7 +29,7 @@
  * caching both speeds up repeat searches and keeps us from hammering them.
  */
 
-import { MediaCategory } from '../src/types';
+import type { MediaCategory } from '../src/types.js';
 
 // ---------------------------------------------------------------------------
 // Normalized result shape
@@ -168,7 +168,7 @@ const clean = (value: unknown): string | undefined => {
 };
 
 // ---------------------------------------------------------------------------
-// AniList — anime + manga (GraphQL, no key, 90 req/min)
+// AniList â€” anime + manga (GraphQL, no key, 90 req/min)
 // ---------------------------------------------------------------------------
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
@@ -234,7 +234,7 @@ function anilistStudio(m: Pick<AniListMedia, 'studios'>): string | undefined {
 
 /**
  * The credited author/original creator for manga. AniList staff roles are free
- * text, so match on the role rather than position — otherwise voice actors and
+ * text, so match on the role rather than position â€” otherwise voice actors and
  * translators crowd out the name that matters.
  */
 function anilistAuthor(m: Pick<AniListMedia, 'staff'>): string | undefined {
@@ -286,7 +286,7 @@ async function searchAniList(
 }
 
 // ---------------------------------------------------------------------------
-// Stremio Cinemeta — movies (no key; IMDb ratings, plot, cast, awards)
+// Stremio Cinemeta â€” movies (no key; IMDb ratings, plot, cast, awards)
 // ---------------------------------------------------------------------------
 
 interface CinemetaMeta {
@@ -389,7 +389,7 @@ async function searchCinemeta(query: string): Promise<MediaLookup[]> {
 }
 
 // ---------------------------------------------------------------------------
-// TVmaze — series (no key)
+// TVmaze â€” series (no key)
 // ---------------------------------------------------------------------------
 
 interface TvMazeShow {
@@ -442,7 +442,7 @@ async function searchTvMaze(query: string): Promise<MediaLookup[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Steam — games (no key). Steam titles only; see the note at the top of file.
+// Steam â€” games (no key). Steam titles only; see the note at the top of file.
 // ---------------------------------------------------------------------------
 
 const STEAM_SEARCH =
@@ -541,7 +541,7 @@ async function searchSteam(query: string): Promise<MediaLookup[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Open Library — books (no key, no CORS header, so server-side only)
+// Open Library â€” books (no key, no CORS header, so server-side only)
 // ---------------------------------------------------------------------------
 
 interface OpenLibraryDoc {
@@ -677,3 +677,5 @@ export const testing = {
   anilistStudio,
   anilistAuthor,
 };
+
+

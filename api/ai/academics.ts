@@ -5,7 +5,9 @@
  * server/handlers.ts, shared with the local Express dev server.
  */
 
-import { createHandler } from '../_adapter';
-import { academics } from '../../server/handlers';
+import { createHandler } from '../../server/adapter.js';
+import { academics } from '../../server/handlers.js';
 
 export default createHandler(academics);
+
+

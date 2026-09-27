@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Transport-agnostic request plumbing shared by the Express dev server
  * (server/index.ts) and the Vercel functions (api/*).
  *
@@ -9,7 +9,7 @@
  * duplicated.
  */
 
-import { getProvider, ProviderConfigError } from './provider';
+import { getProvider, ProviderConfigError } from './provider.js';
 
 export { getProvider, ProviderConfigError };
 
@@ -110,7 +110,16 @@ export function toHttpError(err: unknown): HandlerResult {
   }
 
   const message = err instanceof Error ? err.message : 'Unknown error';
-  console.error('[nova:ai]', message);
+  // Log the name and top stack frames, not just the message. A bare message like
+  // "Invalid JSON" is ambiguous -- it can come from the provider, from Vercel's
+  // request parsing, or from our own code -- and on a deployed function the
+  // stack is the only way to tell those apart. The class name is what decided
+  // which branch above was skipped, so it is the first thing worth seeing.
+  const stack = err instanceof Error && err.stack ? err.stack.split('\n').slice(1, 4).join(' | ') : '';
+  console.error(
+    `[nova:ai] ${err instanceof Error ? err.name : typeof err}: ${message}`,
+    stack
+  );
 
   const keyName =
     provider.name === 'openrouter' ? 'OPENROUTER_API_KEY' : 'GEMINI_API_KEY';
@@ -265,7 +274,7 @@ export async function askForJson(prompt: string): Promise<unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// Validation helpers — never trust the model's shape
+// Validation helpers â€” never trust the model's shape
 // ---------------------------------------------------------------------------
 
 export const str = (v: unknown, fallback = ''): string =>
@@ -279,7 +288,7 @@ export const strArray = (v: unknown, max = 12): string[] =>
  *
  * Providers disagree about list shape. Some honour a request for a top-level
  * array; others (anything using `response_format: json_object`) always wrap it,
- * under a name we can't predict — `{"result": [...]}`, `{"recommendations":
+ * under a name we can't predict â€” `{"result": [...]}`, `{"recommendations":
  * [...]}`, and so on. So: look for a key matching one of `hints` first, then
  * fall back to the first array present, at any depth.
  */
@@ -323,3 +332,4 @@ export function asRecord(value: unknown): Record<string, unknown> {
     ? (value as Record<string, unknown>)
     : {};
 }
+

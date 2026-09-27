@@ -1,4 +1,4 @@
-/**
+﻿/**
  * The five API endpoints, as pure handlers.
  *
  * Each one maps a RequestContext to a `{ status, body }` result and throws on
@@ -15,10 +15,10 @@ import {
   VitalityCoachResult,
   CultureRecResult,
   MediaTitle,
-} from './ai';
-import { lookupTitle, isSupportedCategory, SUPPORTED_CATEGORIES, MediaLookup } from './sources';
-import { searchMedia } from './sources';
-import { MediaCategory } from '../src/types';
+} from './ai.js';
+import { lookupTitle, isSupportedCategory, SUPPORTED_CATEGORIES, MediaLookup } from './sources.js';
+import { searchMedia } from './sources.js';
+import type { MediaCategory } from '../src/types.js';
 import {
   askForJson,
   str,
@@ -29,7 +29,7 @@ import {
   getProvider,
   Handler,
   HandlerResult,
-} from './http';
+} from './http.js';
 
 // ---------------------------------------------------------------------------
 // POST /api/ai/academics
@@ -275,3 +275,5 @@ export const health: Handler = async (): Promise<HandlerResult> => {
     },
   };
 };
+
+
