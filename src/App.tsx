@@ -33,10 +33,6 @@ const DEFAULT_USER: UserAccount = {
   createdAt: 'April 2026',
 };
 
-// Bump this whenever INITIAL_STATS changes so that previously saved
-// localStorage state is discarded and visitors get the new baseline.
-const STATE_VERSION = 2;
-
 // Number of XP snapshots retained per stat for the radar's history trail.
 const MAX_HISTORY = 24;
 
@@ -218,38 +214,21 @@ export function App() {
     }
   });
 
-  const [xpMap, setXpMap] = useState<Record<StatKey, number>>(() => {
-    try {
-      if (Number(localStorage.getItem('nova_state_version') ?? 0) !== STATE_VERSION) {
-        return INITIAL_STATS;
-      }
-      const saved = localStorage.getItem('nova_xp_map');
-      return saved ? JSON.parse(saved) : INITIAL_STATS;
-    } catch {
-      return INITIAL_STATS;
-    }
-  });
+  // Stats deliberately do not persist. This is a demo, and the rank-up
+  // animations are the whole point -- a visitor who came back to a Rank IV
+  // dashboard would never see the radar actually grow, which is the one thing
+  // worth showing. So XP and its history start from the baseline on every load
+  // and live only as long as the tab does.
+  //
+  // The two updates below spread rather than mutate, so handing out the shared
+  // INITIAL_STATS constant cannot corrupt it for the next mount.
+  const [xpMap, setXpMap] = useState<Record<StatKey, number>>(() => ({ ...INITIAL_STATS }));
 
   // XP history powers the radar's growth trail. Rank is derived from XP alone,
   // so a raw number per snapshot is all the radar needs.
-  const [xpHistory, setXpHistory] = useState<Record<StatKey, number[]>>(() => {
-    try {
-      if (Number(localStorage.getItem('nova_state_version') ?? 0) !== STATE_VERSION) {
-        return emptyHistory(INITIAL_STATS);
-      }
-      const saved = localStorage.getItem('nova_xp_history');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Guard against a partial/corrupt record from an older shape.
-        if (parsed && typeof parsed === 'object' && parsed.academics) {
-          return parsed;
-        }
-      }
-    } catch {
-      // fall through to a fresh baseline
-    }
-    return emptyHistory(INITIAL_STATS);
-  });
+  const [xpHistory, setXpHistory] = useState<Record<StatKey, number[]>>(() =>
+    emptyHistory(INITIAL_STATS)
+  );
 
   const [resources, setResources] = useState<AcademicResource[]>(() => {
     try {
@@ -314,20 +293,20 @@ export function App() {
     newTitle: '',
   });
 
+  // Drop the stats keys an earlier build wrote. Nothing reads them any more, but
+  // anyone who loaded the previous deployment still has their progress sitting
+  // in localStorage, and leaving it there is the kind of dead state that later
+  // reads as a bug. Cheap to clear once, on mount.
+  useEffect(() => {
+    for (const key of ['nova_xp_map', 'nova_xp_history', 'nova_state_version']) {
+      localStorage.removeItem(key);
+    }
+  }, []);
+
   // Persist state
   useEffect(() => {
     localStorage.setItem('nova_user', JSON.stringify(currentUser));
   }, [currentUser]);
-  useEffect(() => {
-    localStorage.setItem('nova_xp_map', JSON.stringify(xpMap));
-  }, [xpMap]);
-  useEffect(() => {
-    localStorage.setItem('nova_xp_history', JSON.stringify(xpHistory));
-  }, [xpHistory]);
-  // Stamp the version last so the initializers above can compare against it.
-  useEffect(() => {
-    localStorage.setItem('nova_state_version', String(STATE_VERSION));
-  }, []);
   useEffect(() => {
     localStorage.setItem('nova_resources', JSON.stringify(resources));
   }, [resources]);

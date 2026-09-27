@@ -15,6 +15,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { AuthPage } from '../src/components/ui/auth-page';
 import { ProfileTab } from '../src/components/tabs/ProfileTab';
+import { App } from '../src/App';
 import type { UserAccount } from '../src/types';
 
 let pass = 0;
@@ -45,6 +46,23 @@ function eq(actual: unknown, expected: unknown, what: string): void {
  */
 function visible(html: string): string {
   return html.replace(/<!--\s*-->/g, '');
+}
+
+/**
+ * Visible text with markup removed.
+ *
+ * `visible()` only drops React's separators, so a label and the rank that
+ * follows it can still be split by real elements -- the HUD renders each stat's
+ * name and its band in separate tags. Assertions about two pieces of text being
+ * adjacent need them flattened first.
+ */
+function flat(html: string): string {
+  return visible(html)
+    // A space, not '': adjacent text nodes are separated by markup, and joining
+    // them would weld "ACADEMICS" and its rank into one unmatchable token.
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 console.log('\nauth page render');
@@ -190,6 +208,45 @@ await check('renders the account name and handle', () => {
   );
   if (!html.includes('Anas B')) throw new Error('displayName missing');
   if (!html.includes('@anas')) throw new Error('handle missing');
+});
+
+console.log('\nstats do not survive a reload');
+
+/** Every stat pushed far past Rank I, as a previous build would have left it. */
+const EARNED_XP = { academics: 900, vitality: 900, culture: 900, social: 900 };
+
+await check('a stored XP record is ignored and the HUD starts at Rank I', () => {
+  // The demo's whole point is the rank-up animation, so XP and its history are
+  // deliberately not persisted. A reload must land back at the baseline even
+  // when localStorage still holds progress from an earlier visit -- otherwise
+  // the first-time viewer and the returning one see different dashboards, and
+  // the returning one never sees the radar grow.
+  localStorage.setItem('nova_xp_map', JSON.stringify(EARNED_XP));
+  localStorage.setItem('nova_xp_history', JSON.stringify({ academics: [0, 300, 900] }));
+  localStorage.setItem('nova_state_version', '2');
+
+  const html = visible(renderToString(React.createElement(App)));
+
+  if (!html.includes('TOTAL XP: 0')) {
+    const found = html.match(/TOTAL XP: [^<]*/)?.[0] ?? 'no total at all';
+    throw new Error(`stored XP was honoured: ${found}`);
+  }
+  if (!/\bRANK I\b/.test(html)) throw new Error('overall rank is not I');
+  if (/\bRANK (II|III|IV|V)\b/.test(html)) {
+    throw new Error('a stat is showing above Rank I');
+  }
+  localStorage.clear();
+});
+
+await check('the baseline is Rank I across every stat', () => {
+  localStorage.clear();
+  const text = flat(renderToString(React.createElement(App)));
+  for (const stat of ['ACADEMICS', 'VITALITY', 'CULTURE']) {
+    // Each stat's band label follows its name, as "ACADEMICS I".
+    if (!new RegExp(`${stat} I\\b`).test(text)) {
+      throw new Error(`${stat} is not at Rank I`);
+    }
+  }
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);
