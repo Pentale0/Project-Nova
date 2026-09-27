@@ -5,11 +5,13 @@ import {
   UserAccount,
   AcademicResource,
   MediaItem,
+  MediaCategory,
   MemoryPhoto,
   InterestUser,
   MatchConnection,
 } from './types';
 import { buildStatInfo, calculateRankDetails } from './utils/xp';
+import { fetchCultureRecs } from './utils/api';
 import { WaterBackground } from './components/WaterBackground';
 import { TopBarHUD } from './components/TopBarHUD';
 import { NavigationDial, TabId } from './components/NavigationDial';
@@ -31,12 +33,27 @@ const DEFAULT_USER: UserAccount = {
   createdAt: 'April 2026',
 };
 
+// Bump this whenever INITIAL_STATS changes so that previously saved
+// localStorage state is discarded and visitors get the new baseline.
+const STATE_VERSION = 2;
+
+// Number of XP snapshots retained per stat for the radar's history trail.
+const MAX_HISTORY = 24;
+
 const INITIAL_STATS: Record<StatKey, number> = {
-  academics: 16, // Rank 2: Average (4.0 hours studied)
-  vitality: 18,  // Rank 2: Warming Up (3 sessions)
-  culture: 24,   // Rank 2: Curious (6 titles logged)
-  memories: 15,  // Rank 2: Snapshots (5 photos)
+  academics: 0, // Rank 1: Slacker (0 hours studied)
+  vitality: 0,  // Rank 1: Resting (0 sessions)
+  culture: 0,   // Rank 1: Unplugged (0 titles logged)
+  memories: 0,  // Rank 1: Blank Film (0 photos)
 };
+
+// Every stat starts at Rank I, so the radar trail begins from a single baseline point.
+const emptyHistory = (xp: Record<StatKey, number>): Record<StatKey, number[]> => ({
+  academics: [xp.academics],
+  vitality: [xp.vitality],
+  culture: [xp.culture],
+  memories: [xp.memories],
+});
 
 const INITIAL_RESOURCES: AcademicResource[] = [
   {
@@ -203,11 +220,35 @@ export function App() {
 
   const [xpMap, setXpMap] = useState<Record<StatKey, number>>(() => {
     try {
+      if (Number(localStorage.getItem('nova_state_version') ?? 0) !== STATE_VERSION) {
+        return INITIAL_STATS;
+      }
       const saved = localStorage.getItem('nova_xp_map');
       return saved ? JSON.parse(saved) : INITIAL_STATS;
     } catch {
       return INITIAL_STATS;
     }
+  });
+
+  // XP history powers the radar's growth trail. Rank is derived from XP alone,
+  // so a raw number per snapshot is all the radar needs.
+  const [xpHistory, setXpHistory] = useState<Record<StatKey, number[]>>(() => {
+    try {
+      if (Number(localStorage.getItem('nova_state_version') ?? 0) !== STATE_VERSION) {
+        return emptyHistory(INITIAL_STATS);
+      }
+      const saved = localStorage.getItem('nova_xp_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Guard against a partial/corrupt record from an older shape.
+        if (parsed && typeof parsed === 'object' && parsed.academics) {
+          return parsed;
+        }
+      }
+    } catch {
+      // fall through to a fresh baseline
+    }
+    return emptyHistory(INITIAL_STATS);
   });
 
   const [resources, setResources] = useState<AcademicResource[]>(() => {
@@ -281,6 +322,13 @@ export function App() {
     localStorage.setItem('nova_xp_map', JSON.stringify(xpMap));
   }, [xpMap]);
   useEffect(() => {
+    localStorage.setItem('nova_xp_history', JSON.stringify(xpHistory));
+  }, [xpHistory]);
+  // Stamp the version last so the initializers above can compare against it.
+  useEffect(() => {
+    localStorage.setItem('nova_state_version', String(STATE_VERSION));
+  }, []);
+  useEffect(() => {
     localStorage.setItem('nova_resources', JSON.stringify(resources));
   }, [resources]);
   useEffect(() => {
@@ -328,6 +376,38 @@ export function App() {
   const titles = ['Novice Seeker', 'Disciplined Operative', 'Architect of Self', 'Master Polymath', 'Apex Transcendent'];
   const overallTitle = titles[Math.min(avgRank - 1, titles.length - 1)];
 
+  /**
+   * AI fallback for culture search when the local catalog has no match.
+   *
+   * Reuses the recommender route with an empty taste profile and asks the model
+   * to complete the title. The prompt is category-scoped by the caller, and
+   * results are filtered to titles that actually overlap the query, since the
+   * model otherwise tends to return generic top picks.
+   */
+  const handleAiTitleLookup = async (
+    query: string,
+    category: MediaCategory
+  ): Promise<{ title: string; genres: string[] }[]> => {
+    const recs = await fetchCultureRecs({
+      category,
+      logged: [],
+      stat: { rank: statsInfo.culture.rank, title: statsInfo.culture.title },
+    });
+
+    const tokens = query
+      .toLowerCase()
+      .split(/[\s:]+/)
+      .filter((t) => t.length > 2);
+
+    return recs
+      .map((r) => ({ title: r.title, genres: [r.type.toLowerCase()] }))
+      .filter((r) => {
+        if (tokens.length === 0) return true;
+        const hay = r.title.toLowerCase();
+        return tokens.some((t) => hay.includes(t) || t.includes(hay));
+      });
+  };
+
   // Award XP
   const awardXp = (key: StatKey, amount: number) => {
     const oldDetails = calculateRankDetails(xpMap[key], key);
@@ -337,6 +417,11 @@ export function App() {
     setXpMap((prev) => ({
       ...prev,
       [key]: newXp,
+    }));
+
+    setXpHistory((prev) => ({
+      ...prev,
+      [key]: [...(prev[key] ?? []), newXp].slice(-MAX_HISTORY),
     }));
 
     if (newDetails.rank > oldDetails.rank) {
@@ -501,6 +586,7 @@ export function App() {
           {currentTab === 'overview' && (
             <OverviewTab
               stats={statsInfo}
+              xpHistory={xpHistory}
               onNavigateTab={(tab) => setCurrentTab(tab)}
               onQuickLog={(statKey, units) => {
                 if (statKey === 'academics') handleLogStudy(units);
@@ -535,6 +621,7 @@ export function App() {
               mediaItems={mediaItems}
               onAddMedia={handleAddMedia}
               onDeleteMedia={handleDeleteMedia}
+              onAiLookup={handleAiTitleLookup}
             />
           )}
 
@@ -561,7 +648,7 @@ export function App() {
           {currentTab === 'chat' && (
             <ChatTab
               matches={matches}
-              activeMatch={activeMatch}
+              selectedMatch={activeMatch}
               onSelectMatch={(m) => setActiveMatch(m)}
             />
           )}
@@ -570,8 +657,6 @@ export function App() {
             <ProfileTab
               currentUser={currentUser}
               stats={statsInfo}
-              recentMedia={mediaItems}
-              recentPhotos={photos}
               totalXp={totalXp}
               overallRank={avgRank}
               overallTitle={overallTitle}

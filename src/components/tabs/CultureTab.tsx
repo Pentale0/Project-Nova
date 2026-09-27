@@ -12,15 +12,33 @@ import {
   BookMarked,
   Layers,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { playHoverSound, playSelectSound } from '../../utils/audio';
+import { TitleSearch } from '../TitleSearch';
+import { fetchCultureRecs, AiError } from '../../utils/api';
 
 interface CultureTabProps {
   stat: StatInfo;
   mediaItems: MediaItem[];
   onAddMedia: (category: MediaCategory, title: string, topRank: number, tag?: string) => void;
   onDeleteMedia: (id: string) => void;
+  /** Optional AI title lookup for catalog misses, scoped to the active category. */
+  onAiLookup?: (
+    query: string,
+    category: MediaCategory
+  ) => Promise<{ title: string; year?: number; genres?: string[] }[]>;
 }
+
+/** Maps the recommender's `type` string back to a category id. */
+const CATEGORIES_LABEL: Record<MediaCategory, string> = {
+  movie: 'movie',
+  series: 'series',
+  anime: 'anime',
+  game: 'game',
+  book: 'book',
+  manga: 'manga',
+};
 
 const CATEGORIES: { id: MediaCategory; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'movie', label: 'MOVIES', icon: Film },
@@ -36,6 +54,7 @@ export const CultureTab: React.FC<CultureTabProps> = ({
   mediaItems,
   onAddMedia,
   onDeleteMedia,
+  onAiLookup,
 }) => {
   const [selectedCat, setSelectedCat] = useState<MediaCategory>('game');
   const [newTitle, setNewTitle] = useState('');
@@ -45,6 +64,7 @@ export const CultureTab: React.FC<CultureTabProps> = ({
   // Recommender
   const [aiRecs, setAiRecs] = useState<{ title: string; type: string; reason: string }[] | null>(null);
   const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
 
   // Items for the active category
   const categoryItems = mediaItems
@@ -61,57 +81,43 @@ export const CultureTab: React.FC<CultureTabProps> = ({
     setNewRank(Math.min(10, categoryItems.length + 2));
   };
 
-  const handleGenerateRecs = () => {
+  /** Picking a suggestion fills the form without submitting it. */
+  const handlePickSuggestion = (entry: { title: string; genres: string[]; year: number }) => {
+    setNewTitle(entry.title);
+    // Seed the tag from the first genre so matching has something to work with.
+    setNewTag((prev) => (prev ? prev : entry.genres[0] ? `#${entry.genres[0]}` : ''));
+    setNewRank(Math.min(10, Math.max(1, categoryItems.length + 1)));
+  };
+
+  const handleGenerateRecs = async () => {
     playSelectSound();
     setRecLoading(true);
-    setTimeout(() => {
+    setRecError(null);
+
+    try {
+      const recs = await fetchCultureRecs({
+        category: selectedCat,
+        // Feed the whole canon, not just this category, so the model has
+        // enough signal to justify picks.
+        logged: mediaItems.map((m) => ({
+          title: m.title,
+          category: m.category,
+          topRank: m.topRank,
+          tag: m.tag,
+        })),
+        stat: { rank: stat.rank, title: stat.title },
+      });
+      setAiRecs(recs);
+    } catch (err) {
+      setRecError(
+        err instanceof AiError
+          ? err.message
+          : 'Could not reach the AI server. Is it running? Start it with "npm run dev".'
+      );
+      setAiRecs(null);
+    } finally {
       setRecLoading(false);
-      const suggestions: Record<MediaCategory, { title: string; type: string; reason: string }[]> = {
-        game: [
-          { title: 'Metaphor: ReFantazio', type: 'Game', reason: 'High-concept stylistic visual direction and deep societal storytelling.' },
-          { title: 'Shin Megami Tensei V: Vengeance', type: 'Game', reason: 'Uncompromising tactical turn-based depth with post-apocalyptic mythos.' },
-          { title: 'NieR: Automata', type: 'Game', reason: 'Transcendent philosophical narrative paired with a legendary orchestral score.' },
-          { title: 'Elden Ring', type: 'Game', reason: 'Peerless environmental world design and open-ended exploration mastery.' },
-          { title: 'Ghost of Tsushima', type: 'Game', reason: 'Cinematic Kurosawa homage with crisp swordplay and vivid color palettes.' },
-        ],
-        movie: [
-          { title: 'Blade Runner 2049', type: 'Movie', reason: 'Supreme visual cinematography exploring identity and artificial memory.' },
-          { title: 'Past Lives', type: 'Movie', reason: 'Profoundly moving contemplation on fate, choices, and unseen connections.' },
-          { title: 'Arrival', type: 'Movie', reason: 'Intellectually rigorous science-fiction grounded in linguistic determinism.' },
-          { title: 'Interstellar', type: 'Movie', reason: 'Grand emotional journey traversing relativistic physics and love.' },
-          { title: 'Dune: Part Two', type: 'Movie', reason: 'Epic scale audiovisual immersion with complex political tragedy.' },
-        ],
-        anime: [
-          { title: 'Neon Genesis Evangelion', type: 'Anime', reason: 'Foundational psychological anime exploring loneliness and human walls.' },
-          { title: 'Mononoke', type: 'Anime', reason: 'Unmatched Japanese woodblock aesthetics investigating sorrow and spirits.' },
-          { title: 'Cowboy Bebop', type: 'Anime', reason: 'Sublime blend of neo-noir, jazz improvisation, and bittersweet endings.' },
-          { title: 'Steins;Gate', type: 'Anime', reason: 'Meticulously crafted thriller centered on causality and sacrifice.' },
-          { title: 'Ping Pong The Animation', type: 'Anime', reason: 'Expressive rotoscoped art direction with honest youth character studies.' },
-        ],
-        series: [
-          { title: 'Severance', type: 'Series', reason: 'Flawlessly directed psychological mystery dissecting corporate dissociation.' },
-          { title: 'Dark', type: 'Series', reason: 'Intricately plotted German temporal mystery with unmatched attention to detail.' },
-          { title: 'Succession', type: 'Series', reason: 'Shakespearean family dynamics with razor-sharp tragicomic dialogue.' },
-          { title: 'The Bear', type: 'Series', reason: 'Kinetic visceral tension balancing grief, passion, and culinary craft.' },
-          { title: 'Mr. Robot', type: 'Series', reason: 'Visually audacious psychological journey through cyber security and alienation.' },
-        ],
-        book: [
-          { title: 'Dune', type: 'Book', reason: 'Towering ecology-driven sci-fi masterpiece examining prophetic religion.' },
-          { title: 'The Memory Police', type: 'Book', reason: 'Haunting poetic parable about state-enforced collective amnesia.' },
-          { title: 'Neuromancer', type: 'Book', reason: 'The stylistic genesis of cyberpunk literature and digital cyberspace.' },
-          { title: 'Klara and the Sun', type: 'Book', reason: 'Gentle, heartbreaking perspective on human love from an artificial friend.' },
-          { title: 'Fahrenheit 451', type: 'Book', reason: 'Enduring warning against intellectual passivity and shallow distractions.' },
-        ],
-        manga: [
-          { title: 'Berserk', type: 'Manga', reason: 'Monolithic dark fantasy comic art unmatched in emotional gravity and detail.' },
-          { title: 'Oyasumi Punpun', type: 'Manga', reason: 'Intensely vulnerable introspective exploration of youth and disillusionment.' },
-          { title: 'Vagabond', type: 'Manga', reason: 'Breathtaking brushwork meditation on the way of the sword and enlightenment.' },
-          { title: 'Chainsaw Man', type: 'Manga', reason: 'Subversive dark comedy balancing raw kinetic action with quiet longing.' },
-          { title: 'Pluto', type: 'Manga', reason: 'Deeply compassionate retelling of Astro Boy exploring war trauma in robots.' },
-        ],
-      };
-      setAiRecs(suggestions[selectedCat] || suggestions.game);
-    }, 600);
+    }
   };
 
   return (
@@ -149,8 +155,12 @@ export const CultureTab: React.FC<CultureTabProps> = ({
           onMouseEnter={playHoverSound}
           className="relative z-10 flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-[#FF0055] text-[#002673] hover:text-white font-p3r font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer border-2 border-[#001F5C] shadow-[3px_3px_0px_#001F5C]"
         >
-          <Sparkles className="w-4 h-4 stroke-[2.5]" />
-          <span>AI TASTE RECOMMENDER</span>
+          {recLoading ? (
+            <Sparkles className="w-4 h-4 animate-spin stroke-[2.5]" />
+          ) : (
+            <Sparkles className="w-4 h-4 stroke-[2.5]" />
+          )}
+          <span>{recLoading ? 'THINKING...' : 'AI TASTE RECOMMENDER'}</span>
         </button>
       </div>
 
@@ -226,15 +236,15 @@ export const CultureTab: React.FC<CultureTabProps> = ({
                 </div>
 
                 <div className="sm:col-span-9">
-                  <label className="block text-xs uppercase font-extrabold text-sky-100 mb-1">
-                    Work Title:
-                  </label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder={`e.g. Favorite ${selectedCat} title...`}
-                    className="w-full px-3 py-1.5 bg-[#002673] border-2 border-white text-xs text-white font-bold placeholder:text-white/40 focus:border-[#38BDF8] focus:outline-none"
+                  <TitleSearch
+                    category={selectedCat}
+                    existing={categoryItems.map((m) => m.title)}
+                    onSelect={handlePickSuggestion}
+                    onAiLookup={
+                      onAiLookup
+                        ? (query, cat) => onAiLookup(query, cat)
+                        : undefined
+                    }
                   />
                 </div>
               </div>
@@ -338,22 +348,47 @@ export const CultureTab: React.FC<CultureTabProps> = ({
               Curated recommendations synthesized based on your logged taste spectrum in {selectedCat}.
             </p>
 
-            {aiRecs ? (
+            {recError ? (
+              <div className="p-4 bg-[#001740] border-2 border-[#FF0055] text-xs text-white font-mono font-bold relative z-10 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#FF0055] shrink-0 stroke-[3] mt-px" />
+                <div>
+                  <div className="text-[#FF0055] mb-1">RECOMMENDER UNAVAILABLE</div>
+                  <div className="text-sky-100 leading-relaxed">{recError}</div>
+                </div>
+              </div>
+            ) : aiRecs ? (
               <div className="space-y-2.5 relative z-10">
                 {aiRecs.map((rec, idx) => (
                   <div
                     key={idx}
                     className="p-3.5 bg-[#001740] border-l-4 border-white text-xs text-white leading-relaxed shadow-[3px_3px_0px_#001F5C]"
                   >
-                    <div className="flex justify-between items-baseline mb-1">
-                      <span className="font-extrabold text-white uppercase font-p3r text-sm">
+                    <div className="flex justify-between items-baseline mb-1 gap-2">
+                      <span className="font-extrabold text-white uppercase font-p3r text-sm truncate">
                         0{idx + 1}. {rec.title}
                       </span>
-                      <span className="text-[11px] text-white font-mono font-bold px-1.5 py-0.2 bg-[#002673] border border-white">
+                      <span className="text-[11px] text-white font-mono font-bold px-1.5 py-0.2 bg-[#002673] border border-white shrink-0">
                         {rec.type}
                       </span>
                     </div>
                     <p className="text-sky-100 text-xs font-medium">{rec.reason}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSelectSound();
+                        setSelectedCat(
+                          (Object.keys(CATEGORIES_LABEL) as MediaCategory[]).find(
+                            (c) => CATEGORIES_LABEL[c] === rec.type.toLowerCase()
+                          ) ?? selectedCat
+                        );
+                        setNewTitle(rec.title);
+                        setNewRank(Math.min(10, categoryItems.length + 1));
+                      }}
+                      className="mt-2 px-2.5 py-1 bg-[#002673] hover:bg-white text-white hover:text-[#002673] text-[10px] font-p3r font-black uppercase transition-colors cursor-pointer border border-white/70 flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3 stroke-[3]" />
+                      <span>Load into form</span>
+                    </button>
                   </div>
                 ))}
               </div>

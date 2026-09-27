@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Vercel CLI local project link (created by ercel login / ercel deploy)
+.vercel

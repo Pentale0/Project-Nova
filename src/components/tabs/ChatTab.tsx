@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { UserCandidate, ChatMessage } from '../../types';
+import { MatchConnection, ChatMessage } from '../../types';
 import { MessageSquare, Send, CheckCircle2, Zap } from 'lucide-react';
 import { playHoverSound, playSelectSound } from '../../utils/audio';
 
 interface ChatTabProps {
-  matches: UserCandidate[];
-  selectedMatch: UserCandidate | null;
-  onSelectMatch: (match: UserCandidate) => void;
+  matches: MatchConnection[];
+  selectedMatch: MatchConnection | null;
+  onSelectMatch: (match: MatchConnection) => void;
 }
 
 export const ChatTab: React.FC<ChatTabProps> = ({

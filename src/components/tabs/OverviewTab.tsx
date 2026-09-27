@@ -14,16 +14,35 @@ import { playHoverSound, playSelectSound } from '../../utils/audio';
 
 interface OverviewTabProps {
   stats: Record<StatKey, StatInfo>;
+  xpHistory: Record<StatKey, number[]>;
   onNavigateTab: (tab: any) => void;
   onQuickLog: (statKey: StatKey, units: number) => void;
   onOpenProfile: () => void;
 }
 
+// Same ladder the radar's AUTO mode uses, so the card and graph always agree.
+const OVERALL_TITLES = [
+  'Novice Seeker',
+  'Disciplined Operative',
+  'Architect of Self',
+  'Master Polymath',
+  'Apex Transcendent',
+];
+const OVERALL_RANK_NAMES = ['I', 'II', 'III', 'IV', 'V'];
+
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   stats,
+  xpHistory,
   onNavigateTab,
   onQuickLog,
 }) => {
+  const overallRank = Math.max(
+    1,
+    Math.round(Object.values(stats).reduce((sum, s) => sum + s.rank, 0) / 4)
+  );
+  const overallRankName = OVERALL_RANK_NAMES[Math.min(overallRank - 1, 4)];
+  const overallTitle = OVERALL_TITLES[Math.min(overallRank - 1, 4)];
+
   const statList: {
     key: StatKey;
     stat: StatInfo;
@@ -103,13 +122,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <StatsRadar
               stats={stats}
               size={270}
+              history={xpHistory}
               onQuickLog={onQuickLog}
               onSelectStat={(k) => onNavigateTab(k)}
             />
 
             <div className="text-xs text-sky-100 font-mono font-bold mt-3 text-center bg-[#001B4E] p-2 border border-white/30 flex items-center justify-center gap-2">
               <span className="text-[#FF0055]">▲</span>
-              <span>Tap shapes above to morph • Click nodes to view & boost XP</span>
+              <span>AUTO morphs geometry with your rank • Dashed trail = XP history • Click nodes to boost</span>
               <span className="text-[#FF0055]">▲</span>
             </div>
           </div>
@@ -125,11 +145,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <span>OPERATIVE PROGRESSION</span>
               </div>
               <div className="font-p3r text-2xl font-black text-[#002673] tracking-tight">
-                RANK II // WELL-READ
+                RANK {overallRankName} // {overallTitle.toUpperCase()}
               </div>
             </div>
             <button
-              onClick={() => onNavigateTab('academics')}
+              onClick={() => onNavigateTab('profile')}
               className="relative z-10 px-3.5 py-2 bg-[#002673] hover:bg-[#FF0055] text-white font-p3r text-xs font-black transition-colors cursor-pointer border-2 border-[#001F5C] shadow-[2px_2px_0px_#001F5C] flex items-center gap-1"
             >
               <span>DETAILS</span>

@@ -1,0 +1,20 @@
+# Files Vercel does not need in the upload bundle.
+#
+# Keeping this list tight matters: `vercel` uploads the whole directory before
+# building, so anything left in slows every deploy and inflates the function
+# bundle.
+
+node_modules
+dist
+.git
+.env
+.env.local
+.vercel
+
+# Unrelated Python/FastAPI service. Not imported by the Vite app or api/ functions.
+project-nova
+
+# Local tooling output
+*.log
+npm-debug.log*
+.DS_Store

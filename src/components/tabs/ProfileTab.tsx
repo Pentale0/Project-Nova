@@ -1,41 +1,38 @@
 import React, { useState } from 'react';
-import { UserProfile, StatInfo } from '../../types';
+import { UserAccount, StatInfo } from '../../types';
 import {
   Share2,
   Copy,
   Check,
-  Award,
-  Calendar,
   Zap,
 } from 'lucide-react';
 import { playHoverSound, playSelectSound } from '../../utils/audio';
 
 interface ProfileTabProps {
-  currentUser: UserProfile;
+  currentUser: UserAccount;
   stats: Record<string, StatInfo>;
   totalXp: number;
+  /**
+   * Overall rank and designation are computed in App.tsx from the same
+   * statsInfo the rest of the HUD uses. They were previously recomputed here
+   * from `totalXp`, which used a different threshold and different title
+   * names, so the profile could disagree with the dashboard above it.
+   */
+  overallRank: number;
+  overallTitle: string;
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({
   currentUser,
   stats,
   totalXp,
+  overallRank,
+  overallTitle,
 }) => {
   const [copied, setCopied] = useState(false);
 
-  // Overall Rank calculated from total XP
-  const overallRank = Math.min(5, Math.floor(totalXp / 30) + 1);
   const rankNames = ['I', 'II', 'III', 'IV', 'V'];
   const overallRankName = rankNames[overallRank - 1] || 'V';
-
-  const titles = [
-    'Uninitiated Operative',
-    'Awakened Initiate',
-    'Dedicated Tactician',
-    'Apex Disciplinarian',
-    'Mythic Vanguard',
-  ];
-  const overallTitle = titles[overallRank - 1] || 'Mythic Vanguard';
 
   const profileUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/?u=${currentUser.handle}`

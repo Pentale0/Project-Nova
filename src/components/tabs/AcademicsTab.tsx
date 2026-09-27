@@ -12,8 +12,10 @@ import {
   CheckCircle2,
   FileText,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { playHoverSound, playSelectSound } from '../../utils/audio';
+import { fetchStudyCoach, AiError } from '../../utils/api';
 
 interface AcademicsTabProps {
   stat: StatInfo;
@@ -45,6 +47,7 @@ export const AcademicsTab: React.FC<AcademicsTabProps> = ({
     conceptGraph: string;
     quizzes: QuizQuestion[];
   } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const [revealedQuiz, setRevealedQuiz] = useState<Record<number, boolean>>({});
 
@@ -63,67 +66,33 @@ export const AcademicsTab: React.FC<AcademicsTabProps> = ({
     setNewContent('');
   };
 
-  const handleRunAiTeacher = (e: React.FormEvent) => {
+  const handleRunAiTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
     const activeRes = resources.find((r) => r.id === selectedResourceId);
     if (!activeRes) return;
 
     playSelectSound();
     setIsGenerating(true);
+    setAiError(null);
 
-    setTimeout(() => {
-      setIsGenerating(false);
-      const keySubject = activeRes.title;
-
-      setAiOutput({
-        summaryNotes: [
-          `Core Thesis: "${keySubject}" focuses directly on the primary materials: ${activeRes.content.slice(0, 140)}...`,
-          `Key Deductions: The author establishes systematic principles through rigorous empirical breakdown.`,
-          `Application Context: To master this topic, internalize the underlying axiomatic rules before practical execution.`,
-        ],
-        conceptGraph: `
-┌────────────────────────────────────────────────────────┐
-│ SYLLABUS KNOWLEDGE GRAPH: ${activeRes.title.toUpperCase()}
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│   [PRIMARY SOURCE]                                     │
-│         │                                              │
-│         ▼                                              │
-│   [CORE AXIOM] ───► [EMPIRICAL DATA] ───► [SYNTHESIS]  │
-│         │                                              │
-│         └─────────► [SYSTEMATIC DERIVATION]            │
-│                                                        │
-└────────────────────────────────────────────────────────┘`,
-        quizzes: [
-          {
-            question: `What fundamental axiom is defined in your syllabus notes for "${keySubject}"?`,
-            answer: `The resource explicitly notes: "${activeRes.content.slice(0, 80)}..."`,
-            explanation: `Grounding verification: This comes directly from paragraph 1 of your uploaded study document.`,
-          },
-          {
-            question: `How does the material connect the underlying concept to practical execution?`,
-            answer: `Through structured decomposition and iterative problem analysis.`,
-            explanation: `Reviewing the source text confirms this structural link.`,
-          },
-          {
-            question: `Why is disciplined consistency prioritized in this academic framework?`,
-            answer: `Because foundational mastery requires cognitive reinforcement over time.`,
-            explanation: `Direct teacher synthesis from your syllabus content.`,
-          },
-          {
-            question: `Identify the primary constraint or variable outlined in your notes.`,
-            answer: `The key boundary condition established in the text.`,
-            explanation: `Direct extraction from your resource vault.`,
-          },
-          {
-            question: `What is the final synthesis or takeaway from this lesson?`,
-            answer: `Complete cognitive retention and ability to explain the core premise.`,
-            explanation: `Feynman technique evaluation based on source notes.`,
-          },
-        ],
+    try {
+      const output = await fetchStudyCoach({
+        title: activeRes.title,
+        subject: activeRes.subject,
+        content: activeRes.content,
       });
+      setAiOutput(output);
       setRevealedQuiz({});
-    }, 600);
+    } catch (err) {
+      setAiOutput(null);
+      setAiError(
+        err instanceof AiError
+          ? err.message
+          : 'Could not reach the AI server. Is it running? Start it with "npm run dev".'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const toggleQuiz = (idx: number) => {
@@ -364,9 +333,23 @@ export const AcademicsTab: React.FC<AcademicsTabProps> = ({
                 ) : (
                   <Zap className="w-4 h-4 fill-current stroke-[2.5]" />
                 )}
-                <span>GENERATE NOTES, DIAGRAM & 5 QUIZ QUESTIONS</span>
+                <span>
+                  {isGenerating
+                    ? 'READING YOUR SYLLABUS...'
+                    : 'GENERATE NOTES, DIAGRAM & 5 QUIZ QUESTIONS'}
+                </span>
               </button>
             </form>
+
+            {aiError && (
+              <div className="mb-4 p-3.5 bg-[#001740] border-2 border-[#FF0055] text-xs text-white font-mono font-bold relative z-10 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#FF0055] shrink-0 stroke-[3] mt-px" />
+                <div>
+                  <div className="text-[#FF0055] mb-1">AI TEACHER UNAVAILABLE</div>
+                  <div className="text-sky-100 leading-relaxed">{aiError}</div>
+                </div>
+              </div>
+            )}
 
             {/* Generated Output */}
             {aiOutput && (

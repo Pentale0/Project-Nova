@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { StatInfo } from '../../types';
-import { Dumbbell, Flame, HeartPulse, Send, Timer, ShieldCheck, Zap } from 'lucide-react';
+import { Dumbbell, Flame, HeartPulse, Send, Timer, ShieldCheck, Zap, AlertTriangle } from 'lucide-react';
 import { playHoverSound, playSelectSound } from '../../utils/audio';
+import { fetchVitalityCoach, AiError } from '../../utils/api';
 
 interface VitalityTabProps {
   stat: StatInfo;
@@ -62,6 +63,7 @@ export const VitalityTab: React.FC<VitalityTabProps> = ({
       cooldown: string;
     };
   } | null>(null);
+  const [coachError, setCoachError] = useState<string | null>(null);
 
   const handleLog = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,49 +81,31 @@ export const VitalityTab: React.FC<VitalityTabProps> = ({
     setWorkoutLogs([newLog, ...workoutLogs]);
   };
 
-  const handleConsultCoach = (e: React.FormEvent) => {
+  const handleConsultCoach = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!coachQuery.trim()) return;
     playSelectSound();
     setCoachLoading(true);
+    setCoachError(null);
 
-    setTimeout(() => {
+    try {
+      const advice = await fetchVitalityCoach({
+        domain: coachDomain,
+        query: coachQuery.trim(),
+        stat: { rank: stat.rank, title: stat.title, xp: stat.xp },
+        recentSessions: workoutLogs.length,
+      });
+      setCoachAdvice(advice);
+    } catch (err) {
+      setCoachAdvice(null);
+      setCoachError(
+        err instanceof AiError
+          ? err.message
+          : 'Could not reach the AI server. Is it running? Start it with "npm run dev".'
+      );
+    } finally {
       setCoachLoading(false);
-      if (coachDomain === 'sleep') {
-        setCoachAdvice({
-          headline: 'CIRCADIAN OPTIMIZATION & DEEP REST PROTOCOL',
-          protocol: [
-            'Maintain a fixed wake-up anchor time even on weekends to synchronize suprachiasmatic nucleus rhythms.',
-            'View direct natural sunlight within 30 minutes of waking to trigger cortisol release and set the melatonin countdown.',
-            'Eliminate blue-wavelength light 60 minutes before bed; keep room temperature between 18-19°C (65-67°F) for deep stage 3/4 NREM sleep.',
-            'Magnesium glycinate (200-400mg) and L-theanine can promote autonomic nervous system down-regulation.',
-          ],
-        });
-      } else if (coachDomain === 'recovery') {
-        setCoachAdvice({
-          headline: 'ATHLETIC RECOVERY & SOFT-TISSUE PROTOCOL',
-          protocol: [
-            'Prioritize 1.6 - 2.2g of high-quality protein per kg of bodyweight distributed across 3-4 meals.',
-            'Active recovery: 20-30 minutes of low-intensity walking or light cycling increases blood flow without adding systemic fatigue.',
-            'Target a minimum of 48 hours between training the same heavy compound muscle groups.',
-            'Hydrate with electrolytes (sodium, potassium, magnesium) to support myofibrillar fluid retention.',
-          ],
-        });
-      } else {
-        setCoachAdvice({
-          headline: 'TARGETED ATHLETIC CONDITIONING PROGRAM',
-          protocol: [
-            'Maintain strict mechanical form over raw load to prevent tendon strain.',
-            'Rest intervals: 90-120 seconds between hypertrophy sets, 3 minutes for max power/speed development.',
-          ],
-          workoutPlan: {
-            warmup: '5 mins dynamic hip openers, band pull-aparts, and light jump rope.',
-            mainRoutine: `Based on your request "${coachQuery}": 4 sets of compound movements (RPE 8) + 3 secondary accessory supersets.`,
-            cooldown: '5 mins parasympathetic box-breathing (4s in, 4s hold, 4s out, 4s hold) + hamstring stretches.',
-          },
-        });
-      }
-    }, 600);
+    }
   };
 
   return (
@@ -293,10 +277,24 @@ export const VitalityTab: React.FC<VitalityTabProps> = ({
                 onMouseEnter={playHoverSound}
                 className="w-full py-2.5 bg-white hover:bg-[#FF0055] text-[#002673] hover:text-white font-p3r font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer border-2 border-[#001F5C] shadow-[3px_3px_0px_#001F5C] flex items-center justify-center gap-2"
               >
-                <Zap className="w-3.5 h-3.5 fill-current stroke-[2.5]" />
-                <span>CONSULT VITALITY COACH</span>
+                {coachLoading ? (
+                  <Zap className="w-3.5 h-3.5 animate-spin stroke-[2.5]" />
+                ) : (
+                  <Zap className="w-3.5 h-3.5 fill-current stroke-[2.5]" />
+                )}
+                <span>{coachLoading ? 'BUILDING PROTOCOL...' : 'CONSULT VITALITY COACH'}</span>
               </button>
             </form>
+
+            {coachError && (
+              <div className="mb-4 p-3.5 bg-[#001740] border-2 border-[#FF0055] text-xs text-white font-mono font-bold relative z-10 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#FF0055] shrink-0 stroke-[3] mt-px" />
+                <div>
+                  <div className="text-[#FF0055] mb-1">COACH UNAVAILABLE</div>
+                  <div className="text-sky-100 leading-relaxed">{coachError}</div>
+                </div>
+              </div>
+            )}
 
             {/* Output */}
             {coachAdvice && (
