@@ -379,18 +379,35 @@ export function App() {
   /**
    * AI fallback for culture search when the local catalog has no match.
    *
-   * Reuses the recommender route with an empty taste profile and asks the model
-   * to complete the title. The prompt is category-scoped by the caller, and
-   * results are filtered to titles that actually overlap the query, since the
-   * model otherwise tends to return generic top picks.
+   * Reuses the recommender route and asks the model to complete the title. The
+   * prompt is category-scoped by the caller, and results are filtered to titles
+   * that actually overlap the query, since the model otherwise tends to return
+   * generic top picks.
+   *
+   * The taste profile is the user's own library, highest-rated first. Sending it
+   * is what makes the route worth having: the server looks up real metadata for
+   * the top entries and grounds the model on it, so a completion matches the
+   * user's taste instead of whatever is popular. Capped to match the server's
+   * CULTURE_FACT_LIMIT default, since anything past that is dropped anyway and
+   * this runs per query.
    */
   const handleAiTitleLookup = async (
     query: string,
     category: MediaCategory
   ): Promise<{ title: string; genres: string[] }[]> => {
+    const tasteProfile = [...mediaItems]
+      .sort((a, b) => b.topRank - a.topRank)
+      .slice(0, 5)
+      .map((m) => ({
+        title: m.title,
+        category: m.category,
+        topRank: m.topRank,
+        tag: m.tag,
+      }));
+
     const recs = await fetchCultureRecs({
       category,
-      logged: [],
+      logged: tasteProfile,
       stat: { rank: statsInfo.culture.rank, title: statsInfo.culture.title },
     });
 
