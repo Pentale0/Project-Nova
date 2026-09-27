@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #003DA5;
+    color: #FFFFFF;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* P3R Heavy Italicized Condensed Display Font */
+.font-p3r {
+  font-family: 'Anton', 'Montserrat', sans-serif;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Persona 3 Geometric Angular Clip Paths (Triangles, Lightning, Chevrons, Trapezia) */
+
+/* Chamfered Card: Sharp cut corners */
+.clip-p3r-card {
+  clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
+}
+
+/* Acute Triangle Badge */
+.clip-p3r-triangle {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Right-Facing Triangle / Arrow Flag */
+.clip-p3r-arrow {
+  clip-path: polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%);
+}
+
+/* Diagonal Chevron Ribbon */
+.clip-p3r-chevron {
+  clip-path: polygon(18px 0%, 100% 0%, calc(100% - 18px) 100%, 0% 100%);
+}
+
+/* Lightning Bolt / Zigzag Shard */
+.clip-p3r-lightning {
+  clip-path: polygon(45% 0%, 100% 0%, 55% 42%, 95% 42%, 10% 100%, 35% 55%, 5% 55%);
+}
+
+/* Asymmetric Polygon Wedge */
+.clip-p3r-wedge {
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+}
+
+/* Reverse Wedge */
+.clip-p3r-wedge-rev {
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Parallelogram Badge (skewed with sharp solid borders and offset shadow) */
+.p3r-parallelogram {
+  transform: skewX(-14deg);
+  border: 2px solid #FFFFFF;
+  box-shadow: 4px 4px 0px #001F5C;
+}
+
+.p3r-parallelogram-blue {
+  transform: skewX(-14deg);
+  border: 2px solid #FFFFFF;
+  background-color: #0055FF;
+  box-shadow: 4px 4px 0px #001F5C;
+}
+
+.p3r-parallelogram-crimson {
+  transform: skewX(-14deg);
+  border: 2px solid #FFFFFF;
+  background-color: #FF0055;
+  box-shadow: 4px 4px 0px #001F5C;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite;
+}
+
+/* Hide scrollbars */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

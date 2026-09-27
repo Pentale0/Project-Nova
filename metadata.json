@@ -1,0 +1,6 @@
+{
+  "name": "Project Nova: Persona 3 Reload HUD",
+  "description": "Persona 3 Reload inspired life-gamification HUD with vivid azure aquatic aesthetics, dynamic caustics, XP tracking, social stats, AI coaches, and memory deck.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
