@@ -1,14 +1,14 @@
 {
   "builds": [
     {
-      "src": "app/main.py",
+      "src": "project-nova/app/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app/main.py"
+      "dest": "project-nova/app/main.py"
     }
   ]
 }
