@@ -6,8 +6,14 @@ One connection is opened at startup and reused (libsql_experimental
 connections are safe to share across a single-process app like this).
 """
 
+import libsql_client
 import os
-import libsql_experimental as libsql
+
+url = os.getenv("TURSO_DATABASE_URL")
+token = os.getenv("TURSO_AUTH_TOKEN")
+
+# libsql-client uses pure HTTP/WebSockets which work reliably on Vercel
+client = libsql_client.create_client_sync(url=url, auth_token=token)
 
 STAT_KEYS = ("academics", "vitality", "culture", "memories")
 
