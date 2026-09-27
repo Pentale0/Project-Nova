@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;" class="slide-up">
+    <!-- Header Badge -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <div style="font-size: 0.8rem; letter-spacing: 2px; color: var(--color-cyan); text-transform: uppercase; font-weight: 700;">SYSTEM // BUILDER PROFILE</div>
+            <h1 style="font-size: 2.2rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: #fff;">ABOUT THE CREATOR</h1>
+        </div>
+        <a href="/home" class="btn btn-outline" style="font-size: 0.85rem;">← BACK TO HUD</a>
+    </div>
+
+    <!-- Main Builder Card -->
+    <div class="card" style="display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 2rem; align-items: start; background: rgba(10, 25, 47, 0.85); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 8px; padding: 2rem; box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);">
+        
+        <!-- Creator Avatar / Photo Column -->
+        <div style="text-align: center;">
+            <div style="position: relative; display: inline-block;">
+                <!-- Replace 'creator.jpg' with your photo in app/static/ or upload link -->
+                <img src="/static/creator.PNG" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Anas';" alt="Creator Photo" style="width: 100%; max-width: 240px; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; border: 2px solid var(--color-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);">
+                
+                <div style="position: absolute; bottom: -10px; right: -10px; background: var(--color-cyan); color: #000; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 3px; letter-spacing: 1px;">
+                    RANK V
+                </div>
+            </div>
+
+            <h2 style="margin: 1.2rem 0 0.2rem 0; font-size: 1.4rem; color: #fff; text-transform: uppercase;">Anas Ben Maouia</h2>
+            <div style="color: var(--color-cyan); font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;">LEAD DEVELOPER & ARCHITECT</div>
+
+            <!-- Social Links -->
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.2rem;">
+                <a href="https://github.com" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;">GitHub</a>
+                <a href="https://linkedin.com" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;">LinkedIn</a>
+            </div>
+        </div>
+
+        <!-- Creator Bio & Info Column -->
+        <div>
+            <!-- Section 1: The Bio -->
+            <div style="margin-bottom: 1.8rem;">
+                <h3 style="color: var(--color-cyan); font-size: 1rem; letter-spacing: 1px; margin-top: 0; text-transform: uppercase; border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 5px;">
+                    // The Vision
+                </h3>
+                <p style="color: #cbd5e1; line-height: 1.6; font-size: 0.95rem;">
+                    Hi! I'm <strong>Anas</strong>, also known as Echo, Creator of <strong>PROJECT NOVA</strong>. 
+                    I'm a 16 year old student who studies in CIS International School of Tunis
+                    I built NOVA to turn real-life progress—academics, vitality, culture, and memories—into a gamified, visible stats engine inspired by the UI/UX of <em>Persona 3 Reload</em>.
+                    I also built another project (not related to the hackathon) during the summer called Kitsune Shop that would facilitate the selling of REAL and AUTHENTIC manga in tunisia that unfortunately didnt work
+                </p>
+                <a href="https://www.instagram.com/_ech0_____/" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(0, 229, 255, 0.5);">
+        📸 Instagram
+    </a>
+    <a href="https://kitsune-shop-six.vercel.app/" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: var(--color-cyan); background: rgba(0, 229, 255, 0.1);">
+        🚀 Kitsune Shop
+    </a>
+            </div>
+
+            <!-- Section 2: Tech Stack / Specs -->
+            <div style="margin-bottom: 1.8rem;">
+                <h3 style="color: var(--color-cyan); font-size: 1rem; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 5px;">
+                    // Project Stack & Specs
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 10px;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--color-cyan);">
+                        <div style="font-size: 0.7rem; color: #94a3b8;">BACKEND</div>
+                        <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">FastAPI / Python</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--color-cyan);">
+                        <div style="font-size: 0.7rem; color: #94a3b8;">DATABASE</div>
+                        <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">Turso (libSQL)</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--color-cyan);">
+                        <div style="font-size: 0.7rem; color: #94a3b8;">AI ENGINE</div>
+                        <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">Gemini 1.5 Flash</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--color-cyan);">
+                        <div style="font-size: 0.7rem; color: #94a3b8;">STYLING</div>
+                        <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">P3 Reload HUD</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Personal Favorites -->
+            <div>
+                <h3 style="color: var(--color-cyan); font-size: 1rem; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 5px;">
+                    // Creator Top Deck
+                </h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: var(--color-cyan); border: 1px solid rgba(0, 229, 255, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🎮 Persona 3 Reload</span>
+                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: var(--color-cyan); border: 1px solid rgba(0, 229, 255, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">📺 Steins;Gate</span>
+                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: var(--color-cyan); border: 1px solid rgba(0, 229, 255, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🎵 Cowboy Bebop OST</span>
+                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: var(--color-cyan); border: 1px solid rgba(0, 229, 255, 0.4); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">📖 JoJo: Steel Ball Run</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

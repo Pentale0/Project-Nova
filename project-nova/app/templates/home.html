@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_stat_bar.html" import stat_bar %}
+{% block title %}HUD — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  <h2>Status Screen — {{ user.display_name }}</h2>
+  {% for key in ['academics', 'vitality', 'culture', 'memories'] %}
+    {% if stats.get(key) %}
+      {{ stat_bar(key, stats[key]) }}
+    {% endif %}
+  {% endfor %}
+</div>
+
+<div class="nova-card">
+  <h3>Public Profile</h3>
+  <div class="nova-profile-link">
+    <span id="nova-profile-url">{{ profile_url }}</span>
+    <button type="button" class="nova-btn nova-btn-ghost" onclick="novaCopyProfile()">Copy Link</button>
+  </div>
+</div>
+
+<div class="nova-card">
+  <h3>Where To Next</h3>
+  <ul class="nova-list">
+    <li><a href="/study">Academics</a> — log study hours, ask your Study Coach.</li>
+    <li><a href="/sports">Vitality</a> — log a session, get a workout plan.</li>
+    <li><a href="/culture">Culture</a> — rank your Top 10, get recommendations, find people.</li>
+    <li><a href="/memories">Memories</a> — upload a photo.</li>
+  </ul>
+</div>
+
+<script>
+  function novaCopyProfile() {
+    const text = document.getElementById('nova-profile-url').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Profile link copied!');
+    });
+  }
+</script>
+{% endblock %}

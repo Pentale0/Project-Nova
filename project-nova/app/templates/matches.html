@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Matches — PROJECT NOVA{% endblock %}
+{% block content %}
+
+{% if just_linked %}
+<div class="nova-linked-banner">✦ LINKED ✦</div>
+{% endif %}
+
+<div class="nova-card">
+  <h2>Matches</h2>
+  {% if matches %}
+    <ul class="nova-list">
+      {% for m in matches %}
+        <li>
+          <a href="/chat/{{ m.match_id }}">{{ m.display_name }} <span class="nova-hint">@{{ m.handle }}</span></a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="nova-hint">No matches yet. Head to <a href="/people">People</a> and connect with someone who shares your taste.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

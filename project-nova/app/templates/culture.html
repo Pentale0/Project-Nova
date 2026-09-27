@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_stat_bar.html" import stat_bar %}
+{% block title %}Culture — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  {% if stats.get('culture') %}{{ stat_bar('culture', stats['culture']) }}{% endif %}
+</div>
+
+<div class="nova-card">
+  <h3>Add a Title</h3>
+  <form method="post" action="/culture/top10">
+    <div class="nova-field">
+      <label for="category">Category</label>
+      <select id="category" name="category" required>
+        {% for c in categories %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="nova-field">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" required>
+    </div>
+    <div class="nova-field">
+      <label for="top_rank">Top 10 rank (optional, 1-10)</label>
+      <input type="number" id="top_rank" name="top_rank" min="1" max="10">
+    </div>
+    <button type="submit" class="nova-btn">Add & Earn XP</button>
+  </form>
+</div>
+
+{% for c in categories %}
+  {% if by_category.get(c) %}
+  <div class="nova-card">
+    <h3>{{ c|capitalize }}</h3>
+    <ul class="nova-list">
+      {% for item in by_category[c]|sort(attribute='top_rank', reverse=False) %}
+        <li>{% if item.top_rank %}#{{ item.top_rank }} — {% endif %}{{ item.title }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+{% endfor %}
+
+<div class="nova-card">
+  <h3>Recommendations</h3>
+  <form method="post" action="/culture/ai">
+    <button type="submit" class="nova-btn">Get 5 Fresh Recommendations</button>
+  </form>
+  {% if recommendations is not none %}
+    {% if recommendations %}
+      <ul class="nova-list" style="margin-top:14px;">
+        {% for r in recommendations %}
+          <li><strong>{{ r.title }}</strong> <span class="nova-hint">({{ r.type }})</span><br>
+              <span class="nova-hint">{{ r.rationale }}</span></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="nova-hint" style="margin-top:14px;">The recommender couldn't reach Gemini. Try again.</p>
+    {% endif %}
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Login — PROJECT NOVA{% endblock %}
+{% block content %}
+<div class="nova-card" style="max-width: 420px; margin: 40px auto;">
+  <h2>Resume Your Run</h2>
+  {% if error %}<div class="nova-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/login">
+    <div class="nova-field">
+      <label for="handle">Handle</label>
+      <input type="text" id="handle" name="handle" required>
+    </div>
+    <div class="nova-field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="nova-btn">Login</button>
+  </form>
+  <p class="nova-hint" style="margin-top:16px;">New here? <a href="/register">Create a run</a></p>
+</div>
+{% endblock %}

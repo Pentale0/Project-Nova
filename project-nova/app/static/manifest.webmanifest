@@ -1,0 +1,10 @@
+{
+  "name": "PROJECT NOVA",
+  "short_name": "NOVA",
+  "description": "Level the life you actually live.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050e1c",
+  "theme_color": "#0b1c33",
+  "icons": []
+}

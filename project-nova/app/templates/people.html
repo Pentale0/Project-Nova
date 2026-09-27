@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}People — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  <h2>Interest Deck</h2>
+  <p class="nova-hint">People who share at least one title from your Culture list.</p>
+
+  {% if people %}
+    {% for p in people %}
+      <div class="nova-person-card" id="person-{{ p.id }}">
+        <span>{{ p.display_name }} <span class="nova-hint">@{{ p.handle }}</span></span>
+        <span style="display:flex; gap:8px;">
+          <button type="button" class="nova-btn nova-btn-ghost"
+                  onclick="document.getElementById('person-{{ p.id }}').remove()">Pass</button>
+          <form method="post" action="/people/{{ p.handle }}/connect" style="margin:0;">
+            <button type="submit" class="nova-btn">Connect</button>
+          </form>
+        </span>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="nova-hint">No matches yet — log more Culture titles to find people with shared taste.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

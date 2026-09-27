@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_stat_bar.html" import stat_bar %}
+{% block title %}{{ profile_user.display_name }} — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  <h2>{{ profile_user.display_name }} <span class="nova-hint">@{{ profile_user.handle }}</span></h2>
+  {% for key in ['academics', 'vitality', 'culture', 'memories'] %}
+    {% if stats.get(key) %}
+      {{ stat_bar(key, stats[key]) }}
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if recent_titles %}
+<div class="nova-card">
+  <h3>Recent Culture</h3>
+  <ul class="nova-list">
+    {% for title, category, top_rank in recent_titles %}
+      <li>{{ title }} <span class="nova-hint">({{ category }}{% if top_rank %}, #{{ top_rank }}{% endif %})</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if photos %}
+<div class="nova-card">
+  <h3>Memories</h3>
+  <div class="nova-grid">
+    {% for image_path, caption in photos %}
+      <img class="nova-photo" src="{{ image_path }}" alt="{{ caption or 'memory photo' }}">
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% macro stat_bar(stat_key, stat) %}
+<div class="nova-stat">
+  <div class="nova-stat-head">
+    <span>
+      <span class="nova-rank-badge">{{ ['I','II','III','IV','V'][stat.rank - 1] }}</span>
+      <span class="nova-stat-name">{{ stat_key }}</span>
+      &nbsp;—&nbsp;<span class="nova-stat-title">{{ stat.title }}</span>
+    </span>
+    <span class="nova-stat-xp">
+      {{ stat.xp }} XP{% if stat.next_threshold %} / {{ stat.next_threshold }} to next rank{% else %} (MAX){% endif %}
+    </span>
+  </div>
+  <div class="nova-bar-track">
+    <div class="nova-bar-fill" style="width: {{ stat.percent }}%;"></div>
+  </div>
+</div>
+{% endmacro %}

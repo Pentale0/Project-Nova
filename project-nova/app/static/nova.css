@@ -1,0 +1,219 @@
+/* ==========================================================================
+   PROJECT NOVA — HUD stylesheet
+   Original design language inspired by the mood of Persona 3 Reload's UI:
+   deep seaside blue, cyan glow, glass panels, angular clipped corners,
+   a date/status HUD feel. No borrowed assets, fonts, or audio.
+   ========================================================================== */
+
+:root {
+  --nova-navy-950: #050e1c;
+  --nova-navy-900: #0b1c33;
+  --nova-navy-800: #122a4a;
+  --nova-navy-700: #1a3a63;
+  --nova-cyan: #51eefc;
+  --nova-cyan-dim: #2c8fa3;
+  --nova-white: #eaf6ff;
+  --nova-gray: #8fa6bf;
+  --nova-danger: #ff5c7a;
+  --nova-gold: #ffd166;
+  --nova-radius-clip: 14px;
+  --nova-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--nova-font);
+  color: var(--nova-white);
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(81, 238, 252, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 100%, rgba(81, 238, 252, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--nova-navy-950), var(--nova-navy-900) 40%, var(--nova-navy-950));
+  background-attachment: fixed;
+}
+
+a { color: var(--nova-cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* -------------------- Layout shell -------------------- */
+
+.nova-shell { max-width: 960px; margin: 0 auto; padding: 20px 16px 64px; }
+
+.nova-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; margin-bottom: 24px;
+  background: linear-gradient(90deg, rgba(18,42,74,0.9), rgba(11,28,51,0.6));
+  border: 1px solid rgba(81,238,252,0.25);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+.nova-wordmark {
+  font-weight: 800; letter-spacing: 3px; font-size: 1.1rem;
+  color: var(--nova-white); text-transform: uppercase;
+}
+.nova-wordmark span { color: var(--nova-cyan); }
+
+.nova-nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
+.nova-nav a { color: var(--nova-gray); }
+.nova-nav a:hover, .nova-nav a.active { color: var(--nova-cyan); text-decoration: none; }
+
+.nova-date-hud {
+  font-size: 0.75rem; color: var(--nova-cyan-dim); letter-spacing: 2px; text-transform: uppercase;
+}
+
+/* -------------------- Glass cards -------------------- */
+
+.nova-card {
+  position: relative;
+  background: linear-gradient(155deg, rgba(26,58,99,0.55), rgba(11,28,51,0.65));
+  border: 1px solid rgba(81,238,252,0.18);
+  backdrop-filter: blur(6px);
+  padding: 20px;
+  margin-bottom: 18px;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+}
+
+.nova-card h2, .nova-card h3 {
+  margin-top: 0; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--nova-white); font-size: 1rem;
+  border-bottom: 1px solid rgba(81,238,252,0.2);
+  padding-bottom: 8px; margin-bottom: 14px;
+}
+
+/* -------------------- Stat bars -------------------- */
+
+.nova-stat { margin-bottom: 16px; }
+.nova-stat-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.85rem; margin-bottom: 6px;
+}
+.nova-stat-name { letter-spacing: 2px; text-transform: uppercase; color: var(--nova-gray); }
+.nova-stat-title { color: var(--nova-cyan); font-weight: 600; }
+.nova-stat-xp { color: var(--nova-gray); font-size: 0.75rem; }
+
+.nova-bar-track {
+  height: 10px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(81,238,252,0.2);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 8px 100%);
+  overflow: hidden;
+}
+.nova-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--nova-cyan-dim), var(--nova-cyan));
+  box-shadow: 0 0 10px rgba(81,238,252,0.6);
+  transition: width 0.6s ease;
+}
+
+.nova-rank-badge {
+  display: inline-block; min-width: 22px; text-align: center;
+  padding: 2px 8px; margin-right: 8px;
+  border: 1px solid var(--nova-cyan); color: var(--nova-cyan);
+  font-weight: 700; font-size: 0.75rem;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 6px 100%);
+}
+
+/* -------------------- RANK UP flash -------------------- */
+
+.nova-rankup-flash {
+  position: fixed; inset: 0; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  animation: nova-flash-fade 1.6s ease forwards;
+}
+.nova-rankup-flash .label {
+  font-size: 3rem; font-weight: 900; letter-spacing: 6px;
+  color: var(--nova-cyan);
+  text-shadow: 0 0 24px rgba(81,238,252,0.9), 0 0 60px rgba(81,238,252,0.5);
+  animation: nova-rankup-pop 0.5s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes nova-flash-fade {
+  0% { background: rgba(81,238,252,0); }
+  10% { background: rgba(81,238,252,0.15); }
+  100% { background: rgba(81,238,252,0); }
+}
+@keyframes nova-rankup-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* -------------------- Forms -------------------- */
+
+.nova-field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+.nova-field label { font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; color: var(--nova-gray); }
+.nova-field input, .nova-field textarea, .nova-field select {
+  background: rgba(5,14,28,0.6);
+  border: 1px solid rgba(81,238,252,0.3);
+  color: var(--nova-white);
+  padding: 10px 12px;
+  font-family: inherit; font-size: 0.95rem;
+}
+.nova-field input:focus, .nova-field textarea:focus, .nova-field select:focus {
+  outline: none; border-color: var(--nova-cyan); box-shadow: 0 0 0 2px rgba(81,238,252,0.2);
+}
+.nova-field textarea { min-height: 90px; resize: vertical; }
+
+.nova-btn {
+  display: inline-block; cursor: pointer;
+  background: linear-gradient(90deg, var(--nova-cyan-dim), var(--nova-cyan));
+  color: var(--nova-navy-950); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  border: none; padding: 10px 20px; font-size: 0.85rem;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 10px 100%);
+}
+.nova-btn:hover { filter: brightness(1.1); text-decoration: none; }
+.nova-btn-ghost {
+  background: transparent; color: var(--nova-cyan);
+  border: 1px solid var(--nova-cyan);
+}
+
+.nova-error { color: var(--nova-danger); font-size: 0.85rem; margin-bottom: 12px; }
+.nova-hint { color: var(--nova-gray); font-size: 0.8rem; }
+
+/* -------------------- Misc components -------------------- */
+
+.nova-profile-link {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: rgba(5,14,28,0.5); border: 1px dashed rgba(81,238,252,0.4);
+  padding: 10px 14px; font-size: 0.85rem;
+}
+
+.nova-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.nova-photo { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid rgba(81,238,252,0.2); }
+
+.nova-list { list-style: none; padding: 0; margin: 0; }
+.nova-list li { padding: 8px 0; border-bottom: 1px solid rgba(81,238,252,0.1); }
+.nova-list li:last-child { border-bottom: none; }
+
+.nova-person-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid rgba(81,238,252,0.1);
+}
+
+.nova-quiz-item { margin-bottom: 10px; }
+.nova-quiz-item summary { cursor: pointer; color: var(--nova-cyan); font-size: 0.85rem; }
+.nova-quiz-answer { margin-top: 6px; color: var(--nova-gray); font-size: 0.85rem; }
+
+.nova-linked-banner {
+  text-align: center; padding: 16px; margin-bottom: 18px;
+  border: 1px solid var(--nova-gold); color: var(--nova-gold);
+  letter-spacing: 3px; text-transform: uppercase; font-weight: 700;
+}
+
+.nova-chat-log { max-height: 360px; overflow-y: auto; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.nova-msg { padding: 8px 12px; max-width: 75%; font-size: 0.9rem; }
+.nova-msg.me { align-self: flex-end; background: rgba(81,238,252,0.15); border: 1px solid rgba(81,238,252,0.3); }
+.nova-msg.them { align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+.nova-landing-hero { text-align: center; padding: 60px 20px; }
+.nova-landing-hero h1 { font-size: 2.2rem; letter-spacing: 4px; text-transform: uppercase; }
+.nova-landing-hero h1 span { color: var(--nova-cyan); }
+.nova-landing-hero p { color: var(--nova-gray); margin-bottom: 28px; }
+
+.nova-mermaid-wrap { background: rgba(5,14,28,0.5); border: 1px solid rgba(81,238,252,0.2); padding: 12px; margin-top: 12px; }
+
+@media (max-width: 600px) {
+  .nova-topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .nova-landing-hero h1 { font-size: 1.5rem; }
+}

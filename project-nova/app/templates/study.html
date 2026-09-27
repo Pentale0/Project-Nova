@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "_stat_bar.html" import stat_bar %}
+{% block title %}Academics — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  {% if stats.get('academics') %}{{ stat_bar('academics', stats['academics']) }}{% endif %}
+  <form method="post" action="/log/academics" style="display:flex; gap:10px; align-items:end; margin-top:10px;">
+    <div class="nova-field" style="margin-bottom:0;">
+      <label for="units">Log study time (0.5h blocks)</label>
+      <input type="number" id="units" name="units" min="1" max="20" value="1" required>
+    </div>
+    <button type="submit" class="nova-btn">Log Study Time</button>
+  </form>
+</div>
+
+<div class="nova-card">
+  <h3>Your Resources</h3>
+  {% if resources %}
+    <ul class="nova-list">
+      {% for id, title, content in resources %}
+        <li><strong>{{ title }}</strong> — {{ content[:80] }}{% if content|length > 80 %}…{% endif %}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="nova-hint">No resources yet. Add notes or a textbook passage below so the coach can ground its answers in your own material.</p>
+  {% endif %}
+
+  <form method="post" action="/study/resource">
+    <div class="nova-field">
+      <label for="r_title">Subject / Title</label>
+      <input type="text" id="r_title" name="title" placeholder="e.g. Thermodynamics" required>
+    </div>
+    <div class="nova-field">
+      <label for="r_content">Notes / Passage</label>
+      <textarea id="r_content" name="content" placeholder="Paste your notes or textbook passage here" required></textarea>
+    </div>
+    <button type="submit" class="nova-btn nova-btn-ghost">Save Resource</button>
+  </form>
+</div>
+
+<div class="nova-card">
+  <h3>Ask Your Study Coach</h3>
+  <form method="post" action="/study/ai">
+    <div class="nova-field">
+      <label for="subject">Subject (must match a saved resource title)</label>
+      <input type="text" id="subject" name="subject" value="{{ subject }}" placeholder="e.g. Thermodynamics" required>
+    </div>
+    <div class="nova-field">
+      <label for="question">Your Question</label>
+      <textarea id="question" name="question" placeholder="e.g. Explain the second law and quiz me" required>{{ question }}</textarea>
+    </div>
+    <button type="submit" class="nova-btn">Ask Coach</button>
+  </form>
+</div>
+
+{% if ai_result %}
+<div class="nova-card">
+  <h3>Coach Notes</h3>
+  <p style="white-space: pre-line;">{{ ai_result.notes }}</p>
+
+  {% if ai_result.takeaways %}
+    <h3>Key Takeaways</h3>
+    <ul class="nova-list">
+      {% for t in ai_result.takeaways %}<li>{{ t }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if ai_result.quiz %}
+    <h3>Quiz Yourself</h3>
+    {% for q in ai_result.quiz %}
+      <details class="nova-quiz-item">
+        <summary>{{ loop.index }}. {{ q.question }}</summary>
+        <div class="nova-quiz-answer">{{ q.answer }}</div>
+      </details>
+    {% endfor %}
+  {% endif %}
+
+  {% if ai_result.mermaid %}
+    <h3>Concept Diagram</h3>
+    <div class="nova-mermaid-wrap">
+      <pre class="mermaid">{{ ai_result.mermaid }}</pre>
+    </div>
+  {% endif %}
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+</script>
+{% endif %}
+
+{% endblock %}

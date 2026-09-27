@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_stat_bar.html" import stat_bar %}
+{% block title %}Memories — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  {% if stats.get('memories') %}{{ stat_bar('memories', stats['memories']) }}{% endif %}
+</div>
+
+<div class="nova-card">
+  <h3>Upload a Photo</h3>
+  <form method="post" action="/memories/upload" enctype="multipart/form-data">
+    <div class="nova-field">
+      <label for="image">Photo</label>
+      <input type="file" id="image" name="image" accept="image/*" required>
+    </div>
+    <div class="nova-field">
+      <label for="caption">Caption (optional)</label>
+      <input type="text" id="caption" name="caption" placeholder="e.g. Beach day">
+    </div>
+    <button type="submit" class="nova-btn">Upload & Earn XP</button>
+  </form>
+</div>
+
+<div class="nova-card">
+  <h3>Gallery</h3>
+  {% if photos %}
+    <div class="nova-grid">
+      {% for image_path, caption, created_at in photos %}
+        <img class="nova-photo" src="{{ image_path }}" alt="{{ caption or 'memory photo' }}" title="{{ caption }}">
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="nova-hint">No photos yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

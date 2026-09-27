@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}PROJECT NOVA{% endblock %}</title>
+  <link rel="stylesheet" href="/static/nova.css">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#0b1c33">
+</head>
+<body>
+  <div class="nova-shell">
+    <div class="nova-topbar">
+      <div class="nova-wordmark">PROJECT <span>NOVA</span></div>
+      {% if user %}
+      <nav class="nova-nav">
+        <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">HUD</a>
+        <a href="/study" class="{{ 'active' if request.url.path == '/study' else '' }}">Academics</a>
+        <a href="/sports" class="{{ 'active' if request.url.path == '/sports' else '' }}">Vitality</a>
+        <a href="/culture" class="{{ 'active' if request.url.path == '/culture' else '' }}">Culture</a>
+        <a href="/people" class="{{ 'active' if request.url.path == '/people' else '' }}">People</a>
+        <a href="/matches" class="{{ 'active' if request.url.path.startswith('/matches') or request.url.path.startswith('/chat') else '' }}">Matches</a>
+        <a href="/memories" class="{{ 'active' if request.url.path == '/memories' else '' }}">Memories</a>
+        <a href="/logout">Logout</a>
+        <a href="/about" class="nav-link">About Creator</a>
+      </nav>
+      {% else %}
+      <nav class="nova-nav">
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      </nav>
+      {% endif %}
+      <div class="nova-date-hud" id="nova-date-hud"></div>
+    </div>
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <div id="nova-rankup-root"></div>
+
+  <script>
+    // Live date/time HUD, Persona-style ("velvet room" clock feel without any borrowed asset).
+    function updateHud() {
+      const el = document.getElementById('nova-date-hud');
+      if (!el) return;
+      const now = new Date();
+      const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      el.textContent = now.toLocaleDateString(undefined, opts) + ' · ' + time;
+    }
+    updateHud();
+    setInterval(updateHud, 30000);
+
+    // RANK UP flash: triggered by a ?rankup=statkey:rank query param on the URL,
+    // then the param is stripped so refreshing doesn't replay it.
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const rankup = params.get('rankup');
+      if (!rankup) return;
+      const [statKey, rank] = rankup.split(':');
+      const names = { academics: 'ACADEMICS', vitality: 'VITALITY', culture: 'CULTURE', memories: 'MEMORIES' };
+      const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
+      const roman = romanNumerals[parseInt(rank, 10) - 1] || rank;
+
+      const flash = document.createElement('div');
+      flash.className = 'nova-rankup-flash';
+      flash.innerHTML = '<div class="label">' + (names[statKey] || statKey.toUpperCase()) +
+        ' RANK ' + roman + '</div>';
+      document.getElementById('nova-rankup-root').appendChild(flash);
+      setTimeout(() => flash.remove(), 1700);
+
+      params.delete('rankup');
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    })();
+  </script>
+</body>
+</html>

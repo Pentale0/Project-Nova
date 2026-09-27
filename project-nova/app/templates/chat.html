@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Chat with {{ other.display_name }} — PROJECT NOVA{% endblock %}
+{% block content %}
+
+<div class="nova-card">
+  <h2>{{ other.display_name }} <span class="nova-hint">@{{ other.handle }}</span></h2>
+
+  <div class="nova-chat-log">
+    {% for sender_id, body, created_at in messages %}
+      <div class="nova-msg {{ 'me' if sender_id == user.id else 'them' }}">{{ body }}</div>
+    {% else %}
+      <p class="nova-hint">No messages yet — say hi!</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="/chat/{{ match_id }}" style="display:flex; gap:10px;">
+    <input type="text" name="body" placeholder="Type a message…" required style="flex:1; background: rgba(5,14,28,0.6); border: 1px solid rgba(81,238,252,0.3); color: var(--nova-white); padding: 10px 12px;">
+    <button type="submit" class="nova-btn">Send</button>
+  </form>
+</div>
+
+{% endblock %}
